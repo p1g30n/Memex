@@ -6,7 +6,10 @@ import initStorex from './search/memex-storex'
 import getDb, { setStorex } from './search/get-db'
 import internalAnalytics from './analytics/internal'
 import initSentry from './util/raven'
-import { setupRemoteFunctionsImplementations } from 'src/util/webextensionRPC'
+import {
+    makeRemotelyCallableType,
+    setupRemoteFunctionsImplementations,
+} from 'src/util/webextensionRPC'
 import { StorageChangesManager } from 'src/util/storage-changes'
 
 // Features that require manual instantiation to setup
@@ -27,6 +30,9 @@ import {
     registerBackgroundModuleCollections,
 } from './background-script/setup'
 import { combineSearchIndex } from './search/search-index'
+import { AuthService } from 'src/authentication/background/auth-service'
+import { AuthFirebase } from 'src/authentication/background/auth-firebase'
+import { MockAuthImplementation } from 'src/authentication/background/mocks/auth-mocks'
 
 const storageManager = initStorex()
 const localStorageChangesManager = new StorageChangesManager({
@@ -67,8 +73,17 @@ storageManager.finishInitialization().then(() => {
     bgScript.setupAlarms(alarms)
 })
 
+// const authService = new AuthService(new AuthFirebase())
+const authService = new AuthService(new MockAuthImplementation())
+
 // Gradually moving all remote function registrations here
 setupRemoteFunctionsImplementations({
+    auth: {
+        getUser: authService.getUser,
+        refresh: authService.refresh,
+        checkValidPlan: authService.checkValidPlan,
+        hasSubscribedBefore: authService.hasSubscribedBefore,
+    },
     notifications: { createNotification },
     bookmarks: {
         addPageBookmark:
