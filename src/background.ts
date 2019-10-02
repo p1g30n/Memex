@@ -29,13 +29,20 @@ import {
     setupBackgroundModules,
     registerBackgroundModuleCollections,
 } from './background-script/setup'
-import { combineSearchIndex } from './search/search-index'
 import { AuthService } from 'src/authentication/background/auth-service'
+import { firebase } from 'src/util/firebase-app-initialized'
+import { AuthFirebase } from 'src/authentication/background/auth-firebase'
 import {
-    AuthFirebaseChargebee,
-    ChargebeeSubscriptionInterface,
-} from 'src/authentication/background/auth-firebase-chargebee'
+    FirebaseFunctionsAuth,
+    FirebaseFunctionsSubscription,
+} from 'src/authentication/background/firebase-functions-subscription'
 
+if (
+    process.env.NODE_ENV !== 'production'
+    // && process.env.LOCAL_AUTH_SERVICE === 'true'
+) {
+    firebase.functions().useFunctionsEmulator('http://localhost:5001')
+}
 const storageManager = initStorex()
 const localStorageChangesManager = new StorageChangesManager({
     storage: browser.storage,
@@ -75,10 +82,9 @@ storageManager.finishInitialization().then(() => {
     bgScript.setupAlarms(alarms)
 })
 
-// const authService = new AuthService(new AuthFirebase())
-const authService = new AuthService<ChargebeeSubscriptionInterface>(
-    new AuthFirebaseChargebee(),
-)
+const authService = new AuthService(new AuthFirebase())
+const subscriptionServerFunctions = new FirebaseFunctionsSubscription()
+const authServerFunctions = new FirebaseFunctionsAuth()
 
 // Gradually moving all remote function registrations here
 setupRemoteFunctionsImplementations({
@@ -88,9 +94,10 @@ setupRemoteFunctionsImplementations({
         checkValidPlan: authService.checkValidPlan,
         hasSubscribedBefore: authService.hasSubscribedBefore,
     },
-    subscription: {
-        checkout: authService.subscription.checkout,
-        manage: authService.subscription.manage,
+    serverFunctions: {
+        getCheckoutLink: subscriptionServerFunctions.getCheckoutLink,
+        getManageLink: subscriptionServerFunctions.getManageLink,
+        refreshUserClaims: authServerFunctions.refreshUserClaims,
     },
     notifications: { createNotification },
     bookmarks: {
@@ -104,7 +111,7 @@ setupRemoteFunctionsImplementations({
 // Attach interesting features onto global window scope for interested users
 // TODO: Shouldn't we prefix these with memex_ to avoid collisions?
 window['auth'] = authService
-window['backup'] = backupModule
+window['authServerFunctions'] = authServerFunctions
 window['getDb'] = getDb
 window['storageMan'] = storageManager
 window['bgScript'] = bgScript
