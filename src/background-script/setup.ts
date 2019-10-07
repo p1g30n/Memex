@@ -23,6 +23,18 @@ import {
     ImportStateManager,
 } from 'src/imports/background/state-manager'
 import { setupImportBackgroundModule } from 'src/imports/background'
+import { AuthService } from 'src/authentication/background/auth-service'
+import { AuthFirebase } from 'src/authentication/background/auth-firebase'
+import {
+    FirebaseFunctionsAuth,
+    FirebaseFunctionsSubscription,
+} from 'src/authentication/background/firebase-functions-subscription'
+import {
+    AuthBackground,
+    AuthInterface,
+    AuthServerFunctionsInterface,
+    SubscriptionServerFunctionsInterface,
+} from 'src/authentication/background/types'
 
 export interface BackgroundModules {
     notifications: NotificationBackground
@@ -35,12 +47,16 @@ export interface BackgroundModules {
     tags: TagsBackground
     bookmarks: BookmarksBackground
     backupModule: backup.BackupBackgroundModule
+    auth: AuthBackground
 }
 
 export function createBackgroundModules(options: {
     storageManager: StorageManager
     browserAPIs: Browser
     tabManager?: TabManager
+    authImplementation?: AuthInterface
+    authServerSubscriptionFunctions?: SubscriptionServerFunctionsInterface
+    authServerAuthFunctions?: AuthServerFunctionsInterface
 }): BackgroundModules {
     const { storageManager } = options
     const tabManager = options.tabManager || new TabManager()
@@ -59,7 +75,21 @@ export function createBackgroundModules(options: {
         tabManager,
     })
 
+    const authService = new AuthService(
+        options.authImplementation || new AuthFirebase(),
+    )
+    const subscriptionServerFunctions =
+        options.authServerSubscriptionFunctions ||
+        new FirebaseFunctionsSubscription()
+    const authServerFunctions =
+        options.authServerAuthFunctions || new FirebaseFunctionsAuth()
+
     return {
+        auth: {
+            authService,
+            subscriptionServerFunctions,
+            authServerFunctions,
+        },
         notifications,
         social,
         activityLogger,

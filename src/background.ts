@@ -82,22 +82,22 @@ storageManager.finishInitialization().then(() => {
     bgScript.setupAlarms(alarms)
 })
 
-const authService = new AuthService(new AuthFirebase())
-const subscriptionServerFunctions = new FirebaseFunctionsSubscription()
-const authServerFunctions = new FirebaseFunctionsAuth()
-
 // Gradually moving all remote function registrations here
 setupRemoteFunctionsImplementations({
     auth: {
-        getUser: authService.getUser,
-        refresh: authService.refresh,
-        checkValidPlan: authService.checkValidPlan,
-        hasSubscribedBefore: authService.hasSubscribedBefore,
+        getUser: backgroundModules.auth.authService.getUser,
+        refresh: backgroundModules.auth.authService.refresh,
+        hasValidPlan: backgroundModules.auth.authService.hasValidPlan,
+        hasSubscribedBefore:
+            backgroundModules.auth.authService.hasSubscribedBefore,
     },
     serverFunctions: {
-        getCheckoutLink: subscriptionServerFunctions.getCheckoutLink,
-        getManageLink: subscriptionServerFunctions.getManageLink,
-        refreshUserClaims: authServerFunctions.refreshUserClaims,
+        getCheckoutLink:
+            backgroundModules.auth.subscriptionServerFunctions.getCheckoutLink,
+        getManageLink:
+            backgroundModules.auth.subscriptionServerFunctions.getManageLink,
+        refreshUserClaims:
+            backgroundModules.auth.authServerFunctions.refreshUserClaims,
     },
     notifications: { createNotification },
     bookmarks: {
@@ -110,8 +110,8 @@ setupRemoteFunctionsImplementations({
 
 // Attach interesting features onto global window scope for interested users
 // TODO: Shouldn't we prefix these with memex_ to avoid collisions?
-window['auth'] = authService
-window['authServerFunctions'] = authServerFunctions
+window['authService'] = backgroundModules.auth.authService
+window['authServerFunctions'] = backgroundModules.auth.authServerFunctions
 window['getDb'] = getDb
 window['storageMan'] = storageManager
 window['bgScript'] = bgScript
