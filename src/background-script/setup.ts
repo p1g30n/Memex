@@ -23,18 +23,12 @@ import {
     ImportStateManager,
 } from 'src/imports/background/state-manager'
 import { setupImportBackgroundModule } from 'src/imports/background'
-import { AuthService } from 'src/authentication/background/auth-service'
-import { AuthFirebase } from 'src/authentication/background/auth-firebase'
 import {
-    FirebaseFunctionsAuth,
-    FirebaseFunctionsSubscription,
-} from 'src/authentication/background/firebase-functions-subscription'
-import {
-    AuthBackground,
     AuthInterface,
     AuthServerFunctionsInterface,
     SubscriptionServerFunctionsInterface,
 } from 'src/authentication/background/types'
+import { AuthBackground } from 'src/authentication/background/auth-background'
 
 export interface BackgroundModules {
     notifications: NotificationBackground
@@ -75,21 +69,10 @@ export function createBackgroundModules(options: {
         tabManager,
     })
 
-    const authService = new AuthService(
-        options.authImplementation || new AuthFirebase(),
-    )
-    const subscriptionServerFunctions =
-        options.authServerSubscriptionFunctions ||
-        new FirebaseFunctionsSubscription()
-    const authServerFunctions =
-        options.authServerAuthFunctions || new FirebaseFunctionsAuth()
+    const auth = new AuthBackground()
 
     return {
-        auth: {
-            authService,
-            subscriptionServerFunctions,
-            authServerFunctions,
-        },
+        auth,
         notifications,
         social,
         activityLogger,
@@ -136,6 +119,7 @@ export function setupBackgroundModules(backgroundModules: BackgroundModules) {
         tagsModule: backgroundModules.tags,
         customListsModule: backgroundModules.customLists,
     })
+    backgroundModules.auth.registerRemoteEmitter()
     backgroundModules.notifications.setupRemoteFunctions()
     backgroundModules.social.setupRemoteFunctions()
     backgroundModules.directLinking.setupRemoteFunctions()

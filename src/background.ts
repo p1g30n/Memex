@@ -6,10 +6,7 @@ import initStorex from './search/memex-storex'
 import getDb, { setStorex } from './search/get-db'
 import internalAnalytics from './analytics/internal'
 import initSentry from './util/raven'
-import {
-    makeRemotelyCallableType,
-    setupRemoteFunctionsImplementations,
-} from 'src/util/webextensionRPC'
+import { setupRemoteFunctionsImplementations } from 'src/util/webextensionRPC'
 import { StorageChangesManager } from 'src/util/storage-changes'
 
 // Features that require manual instantiation to setup
@@ -29,20 +26,7 @@ import {
     setupBackgroundModules,
     registerBackgroundModuleCollections,
 } from './background-script/setup'
-import { AuthService } from 'src/authentication/background/auth-service'
-import { firebase } from 'src/util/firebase-app-initialized'
-import { AuthFirebase } from 'src/authentication/background/auth-firebase'
-import {
-    FirebaseFunctionsAuth,
-    FirebaseFunctionsSubscription,
-} from 'src/authentication/background/firebase-functions-subscription'
 
-if (
-    process.env.NODE_ENV !== 'production'
-    // && process.env.LOCAL_AUTH_SERVICE === 'true'
-) {
-    firebase.functions().useFunctionsEmulator('http://localhost:5001')
-}
 const storageManager = initStorex()
 const localStorageChangesManager = new StorageChangesManager({
     storage: browser.storage,
@@ -88,6 +72,8 @@ setupRemoteFunctionsImplementations({
         getUser: backgroundModules.auth.authService.getUser,
         refresh: backgroundModules.auth.authService.refresh,
         hasValidPlan: backgroundModules.auth.authService.hasValidPlan,
+        isAuthorizedForFeature:
+            backgroundModules.auth.authService.isAuthorizedForFeature,
         hasSubscribedBefore:
             backgroundModules.auth.authService.hasSubscribedBefore,
     },
