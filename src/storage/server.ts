@@ -2,7 +2,7 @@ import firebase from 'firebase'
 import StorageManager from '@worldbrain/storex'
 import { FirestoreStorageBackend } from '@worldbrain/storex-backend-firestore'
 
-export function createServerStorageManager() {
+export function initializeFirebaseIfNeeded() {
     if (!firebase.apps.length) {
         firebase.initializeApp({
             apiKey: 'AIzaSyDZhd-4XonvNk5jpg2a5F2_XmKb3G2jI9U',
@@ -14,6 +14,11 @@ export function createServerStorageManager() {
             appId: '1:455172385517:web:ad25d7f0325f2ddc0c3ae4',
         })
     }
+}
+
+export function createServerStorageManager() {
+    initializeFirebaseIfNeeded()
+
     const serverStorageBackend = new FirestoreStorageBackend({
         firebase: firebase as any,
         firestore: firebase.firestore() as any,
