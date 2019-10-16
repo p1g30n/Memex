@@ -2,12 +2,13 @@ import { Browser } from 'webextension-polyfill-ts'
 import StorageManager from '@worldbrain/storex'
 import { SharedSyncLog } from '@worldbrain/storex-sync/lib/shared-sync-log'
 import { reconcileSyncLog } from '@worldbrain/storex-sync/lib/reconciliation'
-import { doSync } from '@worldbrain/storex-sync'
+import { doSync, SyncPreSendProcessor } from '@worldbrain/storex-sync'
 import AuthBackground from 'src/auth/background'
 import { SYNC_STORAGE_AREA_KEYS } from './constants'
 import { ClientSyncLogStorage } from '@worldbrain/storex-sync/lib/client-sync-log'
 import { RecurringTask } from 'src/util/recurring-task'
 import { getLocalStorage } from 'src/util/storage'
+import { isTermsField } from 'src/storage/utils'
 
 export default class ContinuousSync {
     public recurringIncrementalSyncTask?: RecurringTask
@@ -108,6 +109,7 @@ export default class ContinuousSync {
             now: Date.now(),
             userId: user.id,
             deviceId: this.deviceId,
+            preSend: _preSendProcessor,
         })
     }
 
@@ -124,5 +126,31 @@ export default class ContinuousSync {
         await localStorage.set({
             [SYNC_STORAGE_AREA_KEYS[key]]: value,
         })
+    }
+}
+
+export const _preSendProcessor: SyncPreSendProcessor = async ({
+    entry,
+    ...params
+}) => {
+    if (entry.operation === 'create') {
+        for (const field of Object.keys(entry.value)) {
+            if (isTermsField({ field, collection: entry.collection })) {
+                delete entry.value[field]
+            }
+        }
+        if (!Object.keys(entry.value).length) {
+            return { entry: null }
+        } else {
+            return { entry }
+        }
+    } else if (entry.operation === 'modify') {
+        if (isTermsField(entry)) {
+            return { entry: null }
+        } else {
+            return { entry }
+        }
+    } else {
+        return { entry, ...params }
     }
 }
