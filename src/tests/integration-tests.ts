@@ -48,6 +48,7 @@ export interface BackgroundIntegrationTestSetup {
 }
 export interface BackgroundIntegrationTestContext {
     setup: BackgroundIntegrationTestSetup
+    isSyncTest?: boolean
 }
 export type BackgroundIntegrationTest = IntegrationTest<
     BackgroundIntegrationTestContext

@@ -34,6 +34,8 @@ export default class SyncBackground {
     clientSyncLog: ClientSyncLogStorage
     syncLoggingMiddleware?: SyncLoggingMiddleware
     firstContinuousSyncPromise?: Promise<void>
+    getSharedSyncLog: () => Promise<SharedSyncLog>
+
     readonly syncedCollections: string[] = [
         bookmarkCollectionName,
         listCollectionName,
@@ -55,6 +57,7 @@ export default class SyncBackground {
             browserAPIs: Pick<Browser, 'storage'>
         },
     ) {
+        this.getSharedSyncLog = options.getSharedSyncLog
         this.clientSyncLog = new MemexClientSyncLogStorage({
             storageManager: options.storageManager,
         })
