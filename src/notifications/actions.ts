@@ -51,7 +51,7 @@ export const initStorageValue = async () => {
 
         // Special case for SHOULD_TRACK_STORAGE_KEY, becuase the default value is not false
         keys[storageKeys[key]] =
-            key === 'SHOULD_TRACK_STORAGE_KEY' ? value === true : value
+            key === 'SHOULD_TRACK_STORAGE_KEY' ? value === false : value
     }
 
     return keys
